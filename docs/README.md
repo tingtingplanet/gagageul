@@ -1,5 +1,6 @@
 # 가가끄글 : 끄글을 포팅해 추가 기능을 넣은 프로젝트입니다.
 원본 프로젝트는 아래와 같습니다.
+사이트 : https://tingtingplanet.github.io/gagageul/
 링크:https://singrum.github.io/ggeugle/
 
 # 끄글 : 끝말잇기 검색엔진

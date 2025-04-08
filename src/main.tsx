@@ -4,7 +4,7 @@ import { ThemeProvider } from "./components/theme-provider.tsx";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import "./index.css";
 
-const router = createBrowserRouter([{ path: "/ggeugle", element: <App /> }]);
+const router = createBrowserRouter([{ path: "/gagageul", element: <App /> }]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">

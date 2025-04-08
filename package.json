@@ -3,7 +3,7 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
-	"homepage": "https://tingtingplanet.github.io/ggeugle/",
+	"homepage": "https://tingtingplanet.github.io/gagageul/",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build",
