@@ -22,7 +22,7 @@ export const etcMenu = [
 			</svg>
 		),
 		onClick_: () => {
-			open("https://github.com/singrum/ggeugle");
+			open("https://github.com/tingtingplanet/gagageul");
 		},
 	},
 ];
@@ -45,7 +45,7 @@ export function EtcNavBar() {
 						size="icon"
 						variant={"ghost"}
 						onClick={() => {
-							open("https://github.com/singrum/ggeugle");
+							open("https://github.com/tingtingplanet/gagageul");
 						}}
 					>
 						<svg viewBox="0 0 438.549 438.549" className="h-5 w-5">
