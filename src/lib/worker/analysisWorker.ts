@@ -1,4 +1,4 @@
-import { CustomCondition } from "../store/useWC";
+// import { CustomCondition, CustomConditionState } from "../store/useWC";
 import {
 	getReachableNodes,
 	isWin,
@@ -13,11 +13,12 @@ export type payload = {
 	action: "startAnalysis" | "IDS:startAnalysis";
 	data: unknown;
 };
-export type CustomConditionState = {
-	customCondition: CustomCondition;
-	is_include: boolean;
-	isSelected: boolean;
-} | null;
+// export type CustomConditionState = {
+// 	customCondition: CustomCondition;
+// 	is_include: boolean;
+// 	isSelected: boolean;
+// } | null;
+
 let count = 1;
 const analysis = ({
 	namedRule,
@@ -27,8 +28,8 @@ const analysis = ({
 	startChar,
 	exceptWord,
 	customPriority,
-	customCondition,
-}: {
+}: // customConditionStates = [],
+{
 	namedRule: string;
 	withStack: boolean;
 	chanGraph: MultiDiGraph;
@@ -36,7 +37,7 @@ const analysis = ({
 	startChar: Char;
 	exceptWord?: Char[];
 	customPriority?: Record<string, number>;
-	customCondition?: CustomCondition;
+	// customConditionStates?: CustomConditionState[];
 }) => {
 	chanGraph = objToMultiDiGraph(chanGraph);
 	wordGraph = objToMultiDiGraph(wordGraph);
@@ -58,41 +59,6 @@ const analysis = ({
 	pruningWinLosCir(chanGraph, wordGraph);
 	const wordStack: Char[][] = [];
 	const maxBranch: (Char[][] | undefined)[] = [];
-	const isCustomStateNull =
-		customCondition !== undefined &&
-		customCondition !== null &&
-		exceptWord !== undefined &&
-		customCondition.exceptWords.filter(
-			(exceptWordRule) =>
-				exceptWordRule[0] === exceptWord[0] &&
-				exceptWordRule[1] === exceptWord[1]
-		).length > 0; // 첫글자가 exceptrule에 있으면 customConditionState가 null
-	const isCustomStateInclude =
-		customCondition !== undefined &&
-		customCondition !== null &&
-		exceptWord !== undefined &&
-		customCondition.includeWords.filter((includeWordRule) => {
-			return (
-				includeWordRule[0] === exceptWord[0] &&
-				includeWordRule[1] === exceptWord[1]
-			);
-		}).length > 0; // 첫글자가 includeWords에 있으면 is_include가 true
-	const isCustomStateSelected =
-		customCondition !== undefined &&
-		customCondition !== null &&
-		exceptWord !== undefined &&
-		customCondition.priority?.startChar === exceptWord[0] &&
-		customCondition.priority?.endChar === exceptWord[1]; // 첫글자와 끝글자가 priority에 있으면 isSelected가 true
-	const customConditionState: CustomConditionState = isCustomStateNull
-		? null
-		: customCondition
-		? {
-				customCondition,
-				is_include: isCustomStateInclude,
-				isSelected: isCustomStateSelected,
-		  }
-		: null;
-
 	const win = withStack
 		? isWin(
 				namedRule,
@@ -127,8 +93,8 @@ const analysis = ({
 
 					self.postMessage({ action: "stackChange", data: wordStack });
 				},
-				customPriority,
-				customConditionState
+				customPriority
+				// customConditionStates
 		  )
 		: isWin(
 				namedRule,
@@ -137,10 +103,10 @@ const analysis = ({
 				startChar,
 				undefined,
 				undefined,
-				customPriority,
-				customConditionState
+				customPriority
+				// customConditionStates
 		  );
-
+	console.log(maxBranch);
 	self.postMessage({
 		action: "end",
 		data: {
@@ -242,7 +208,7 @@ self.onmessage = (event) => {
 					startChar: Char;
 					exceptWord: Char[];
 					customPriority: Record<string, number>;
-					customCondition: CustomCondition;
+					// customConditionStates: CustomConditionState[];
 				}
 			);
 			return;

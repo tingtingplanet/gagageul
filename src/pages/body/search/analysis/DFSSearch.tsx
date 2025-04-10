@@ -13,7 +13,6 @@ import { Char, Word } from "@/lib/wc/WordChain";
 import { josa } from "es-hangul";
 import { CornerDownRight, Play } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
-
 export function DFSSearch() {
 	const [
 		namedRule,
@@ -24,7 +23,8 @@ export function DFSSearch() {
 		exceptWords,
 		setExceptWords,
 		customPriority,
-		customCondition,
+		customConditions,
+		// customCondition,
 	] = useWC((e) => [
 		e.namedRule,
 		e.searchInputValue,
@@ -34,7 +34,8 @@ export function DFSSearch() {
 		e.exceptWords,
 		e.setExceptWords,
 		e.customPriority,
-		e.customCondition,
+		e.customConditions,
+		// e.customCondition,
 	]);
 
 	const [wordStack, setWordStack] = useState<Word[]>([]);
@@ -52,8 +53,9 @@ export function DFSSearch() {
 		worker.current.onmessage = ({ data }) => {
 			switch (data.action) {
 				case "stackChange":
-					setWordStack((stack) =>
-						stack.length > data.data.length
+					setWordStack((stack) => {
+						console.log("stackchange", stack);
+						return stack.length > data.data.length
 							? stack.splice(0, stack.length - 1)
 							: [
 									...stack,
@@ -62,11 +64,11 @@ export function DFSSearch() {
 										.filter(
 											(e) => !stack.includes(e) && !exceptWords.includes(e)
 										)[0],
-							  ]
-					);
+							  ];
+					});
 					return;
 
-				case "end":
+				case "end": // 글자 하나 탐색 종료
 					const { win, maxStack } = data.data;
 
 					const endedWordIdx = nextRoutesInfo.findIndex(
@@ -92,8 +94,20 @@ export function DFSSearch() {
 
 						return result;
 					});
-
+					const startChar = nextRoutesInfo[endedWordIdx + 1];
 					if (endedWordIdx !== nextRoutesInfo.length - 1 && win) {
+						// const customConditionStates = customConditions.map(
+						// 	(customCondition) => ({
+						// 		customCondition,
+						// 		isSelected: getCustomConditionIsSelected(
+						// 			customCondition.charType,
+						// 			customCondition.startChar,
+						// 			customCondition.endChar,
+						// 			startChar.word.at(engine!.rule.headIdx)! +
+						// 				startChar.word.at(engine!.rule.tailIdx)!
+						// 		),
+						// 	})
+						// );
 						worker.current.postMessage({
 							action: "startAnalysis",
 							data: {
@@ -113,6 +127,7 @@ export function DFSSearch() {
 									),
 								],
 								customPriority: customPriority,
+								// customConditionStates: customConditionStates,
 							},
 						});
 					}
@@ -168,8 +183,74 @@ export function DFSSearch() {
 					);
 			  })
 			: nextRoutesInfo_;
-		setNextRoutesInfo(sortedNextRoutesInfo);
+		// 초기 단어에 대해서 조건 충족 여부 확인 및 isSelected 생성
+		// const customConditionPriorityMap: CustomConditionPriorityMap = {};
+		// searchInputValue.length > 1 &&
+		// 	customConditions.map((customCondition) => {
+		// 		const exceptWords = customCondition.exceptWords.filter(
+		// 			(e) =>
+		// 				!(
+		// 					e[0] === searchInputValue.at(engine!.rule.headIdx)! &&
+		// 					e[1] === searchInputValue.at(engine!.rule.tailIdx)!
+		// 				)
+		// 		);
+		// 		if (exceptWords.length === 0) {
+		// 			return undefined;
+		// 		}
+		// 		const includeWords = customCondition.includeWords.filter(
+		// 			(e) =>
+		// 				!(
+		// 					e[0] === searchInputValue.at(engine!.rule.headIdx)! &&
+		// 					e[1] === searchInputValue.at(engine!.rule.tailIdx)!
+		// 				)
+		// 		);
+		// 		if (includeWords.length === 0) {
+		// 			customConditionPriorityMap[
+		// 				customCondition.startChar + customCondition.endChar
+		// 			] = {
+		// 				number: customCondition.priority,
+		// 				charType: customCondition.charType,
+		// 			};
+		// 		}
+		// 	});
+		// if (customConditionPriorityMap) {
+		// 	sortedNextRoutesInfo.sort((a, b) => {
+		// 		const aPriority = getCustomConditionPriority(
+		// 			a.word.at(engine!.rule.headIdx)! + a.word.at(engine!.rule.tailIdx)!,
+		// 			customConditionPriorityMap
+		// 		);
+		// 		const bPriority = getCustomConditionPriority(
+		// 			b.word.at(engine!.rule.headIdx)! + b.word.at(engine!.rule.tailIdx)!,
+		// 			customConditionPriorityMap
+		// 		);
+		// 		return aPriority - bPriority;
+		// 	});
+		// }
+
 		const startChar = sortedNextRoutesInfo[0];
+		// const customConditionStates = customConditions.map((customCondition) => {
+		// 	return {
+		// 		customCondition: {
+		// 			...customCondition,
+		// 			includeWords: customCondition.includeWords.filter(
+		// 				(e) =>
+		// 					!(
+		// 						e[0] === startChar.word.at(engine!.rule.headIdx)! &&
+		// 						e[1] === startChar.word.at(engine!.rule.tailIdx)!
+		// 					)
+		// 			),
+		// 		},
+		// 		isSelected: getCustomConditionIsSelected(
+		// 			customCondition.charType,
+		// 			customCondition.startChar,
+		// 			customCondition.endChar,
+		// 			startChar.word.at(engine!.rule.headIdx)! +
+		// 				startChar.word.at(engine!.rule.tailIdx)!
+		// 		),
+		// 	};
+		// });
+		setNextRoutesInfo(sortedNextRoutesInfo);
+
 		worker.current.postMessage({
 			action: "startAnalysis",
 			data: {
@@ -183,7 +264,9 @@ export function DFSSearch() {
 					startChar.word.at(engine!.rule.tailIdx),
 				],
 				customPriority: customPriority,
-				customCondition: customCondition,
+				// customConditionStates: customConditionStates.filter(
+				// 	(e) => e !== undefined
+				// ),
 			},
 		});
 

@@ -7,7 +7,7 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-		<div className="noto-sans-kr h-full min-h-0">
+		<div className="min-h-screen bg-background text-foreground font-sans">
 			<App />
 		</div>
 	</ThemeProvider>
