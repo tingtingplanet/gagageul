@@ -52,8 +52,8 @@ export class CustomConditionEngine {
 	conditionStates: CustomConditionState[];
 	constructor(public conditions: CustomCondition[]) {
 		this.conditionStates = conditions.map((condition) => ({
-			exceptWords: condition.exceptWords,
-			includeWords: condition.includeWords,
+			exceptWords: JSON.parse(JSON.stringify(condition.exceptWords)),
+			includeWords: JSON.parse(JSON.stringify(condition.includeWords)),
 			startChar: condition.startChar,
 			endChar: condition.endChar,
 			conditionType: condition.conditionType,
@@ -153,8 +153,8 @@ export class CustomConditionEngine {
 					(state.startChar === word.at(0) &&
 						state.conditionType === "startswith") ||
 					(state.conditionType === "contains" &&
-						word.includes(state.startChar) &&
-						word.includes(state.endChar)))
+						word[0] === state.startChar &&
+						word[word.length - 1] === state.endChar))
 			) {
 				console.log("hellow,,,,");
 				state.isSelected = true;
