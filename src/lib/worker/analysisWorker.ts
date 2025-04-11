@@ -42,12 +42,11 @@ const analysis = ({
 	customConditionEngine = new CustomConditionEngine(
 		customConditionEngine.conditionStates
 	);
+	customConditionEngine.getValidConditions();
 	chanGraph = objToMultiDiGraph(chanGraph);
 	wordGraph = objToMultiDiGraph(wordGraph);
 	if (exceptWord) {
 		customConditionEngine.updateState(exceptWord[0] + exceptWord[1]);
-		console.log(customConditionEngine.conditionStates);
-		customConditionEngine.getValidConditions();
 		if (wordGraph.nodes[exceptWord[0]].loop === exceptWord[1]) {
 			wordGraph.nodes[exceptWord[0]].loop = undefined;
 		} else {
@@ -65,6 +64,7 @@ const analysis = ({
 	pruningWinLosCir(chanGraph, wordGraph);
 	const wordStack: Char[][] = [];
 	const maxBranch: (Char[][] | undefined)[] = [];
+	console.log("withStack", withStack, exceptWord);
 	const win = withStack
 		? isWin(
 				namedRule,
@@ -111,7 +111,6 @@ const analysis = ({
 				undefined,
 				undefined,
 				customPriority
-				// customConditionStates
 		  );
 	// console.log(maxBranch);
 	self.postMessage({

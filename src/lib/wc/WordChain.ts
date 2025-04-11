@@ -28,6 +28,9 @@ export type CustomCondition = {
 	conditionType: "endswith" | "startswith" | "contains"; // must
 	type: "win" | "los" | "priority"; // must
 	priority: number; // optional
+	isSelected?: boolean;
+	isValid?: boolean;
+	isInitialized?: boolean;
 };
 
 export type Char = string;
@@ -49,19 +52,20 @@ export type CustomConditionState = {
 };
 export type Condition = Record<string, number | "win" | "los">;
 export class CustomConditionEngine {
+	testcount = 0;
 	conditionStates: CustomConditionState[];
-	constructor(public conditions: CustomCondition[]) {
+	constructor(public conditions: CustomCondition[] | CustomConditionState[]) {
 		this.conditionStates = conditions.map((condition) => ({
-			exceptWords: JSON.parse(JSON.stringify(condition.exceptWords)),
 			includeWords: JSON.parse(JSON.stringify(condition.includeWords)),
+			exceptWords: JSON.parse(JSON.stringify(condition.exceptWords)),
 			startChar: condition.startChar,
 			endChar: condition.endChar,
 			conditionType: condition.conditionType,
 			type: condition.type,
 			priority: condition.priority,
-			isSelected: false,
-			isValid: true,
-			isInitialized: false,
+			isSelected: condition.isSelected ?? false,
+			isValid: condition.isValid ?? true,
+			isInitialized: condition.isInitialized ?? false,
 		}));
 	}
 	// except: 5개 있는데 3개 이하이려면 2개 쓰고부터 조건 발동
@@ -85,9 +89,16 @@ export class CustomConditionEngine {
 				const count = words.filter(
 					(w) => w.at(0) === word.at(0) && w.at(-1) === word.at(-1)
 				).length;
-				state.exceptWords[word] = count - (state.exceptWords[word] ?? 0); // 3개있는데 3개 이하이려면 처음부터 true, 즉 delete 되어야함 4개있는데 3개 이하이려면 1개 써야함
+				state.exceptWords[word] = count - (state.exceptWords[word] ?? 0); // 3개있는데 2개 이하이려면 처음부터 true, 즉 delete 되어야함 4개있는데 3개 이하이려면 1개 써야함
+				// console.log("except");
+				// console.log(state.exceptWords[word]);
+				// console.log(count);
+				// console.log("init");
 				if (state.exceptWords[word] <= 0) {
+					// console.log("delete", word);
 					delete state.exceptWords[word];
+					// console.log(state.exceptWords);
+					// console.log(Object.values(state.exceptWords).every((e) => e === 0));
 				}
 			}
 		}
@@ -117,27 +128,40 @@ export class CustomConditionEngine {
 		// console.log("updateState", this.conditionStates);
 
 		for (const state of this.conditionStates) {
+			// console.log("excep2122t", word);
 			// Update exceptWords counts
 			if (word in state.exceptWords) {
 				if (state.exceptWords[word] > 1) {
 					state.exceptWords[word] = Math.max(0, state.exceptWords[word] - 1);
 				} else {
 					// 예외 단어가 더 이상 남아있지 않음. key 제거
+					// console.log("excep21t", word);
+					// console.log(state.exceptWords);
 					delete state.exceptWords[word];
+					// console.log(state.exceptWords);
+					// console.log(Object.values(state.exceptWords).every((e) => e === 0));
+					// console.log(Object.keys(state.exceptWords));
 				}
 			}
 
 			// Update includeWords counts
 			if (word in state.includeWords) {
-				state.includeWords[word] = Math.max(-1, state.includeWords[word] - 1);
-				// If we've used more than allowed, mark as invalid
-				if (state.includeWords[word] < 0) {
-					state.isValid = false;
-				}
+				state.includeWords[word] = state.includeWords[word] - 1;
+				console.log("cut", word);
+				console.log(
+					"testcode: updateState end with testcount",
+					this.testcount++,
+					"with word",
+					word,
+					JSON.stringify(this.conditionStates)
+				);
 			}
 
 			const allExceptWordsUsed = Object.values(state.exceptWords).every(
-				(count) => count === 0
+				(count) => {
+					// console.log(count);
+					return count === 0;
+				}
 			);
 
 			// Check if includeWords are still valid (all counts are >= 0)
@@ -146,6 +170,22 @@ export class CustomConditionEngine {
 			);
 
 			state.isValid = allExceptWordsUsed && includeWordsValid;
+			// console.log("states whole", this.conditionStates);
+			// console.log("word", word);
+			// console.log("exceptWords", state.exceptWords);
+			// console.log("state", state.startChar);
+			// console.log("updateState", state.isValid);
+			// console.log(
+			// 	"wer so close",
+			// 	state.isValid &&
+			// 		((state.endChar === word.at(-1) &&
+			// 			state.conditionType === "endswith") ||
+			// 			(state.startChar === word.at(0) &&
+			// 				state.conditionType === "startswith") ||
+			// 			(state.conditionType === "contains" &&
+			// 				word[0] === state.startChar &&
+			// 				word[word.length - 1] === state.endChar))
+			// );
 			if (
 				state.isValid &&
 				((state.endChar === word.at(-1) &&
@@ -164,7 +204,7 @@ export class CustomConditionEngine {
 		}
 	}
 	copy() {
-		return new CustomConditionEngine(this.conditions);
+		return new CustomConditionEngine(this.conditionStates);
 	}
 }
 

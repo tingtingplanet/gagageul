@@ -107,39 +107,11 @@ export function sortByCondition(
 	conditionStates: CustomConditionState[],
 	nextWords: { word: Char[]; isLoop: boolean; moveNum?: number }[]
 ) {
-	if (
-		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
-	) {
-		console.log(nextWords.map((e) => e.word[0] + e.word[1]));
-	}
 	const priorityStates = conditionStates.filter(
 		(e) => e.isValid && e.type === "priority"
 	);
-	if (
-		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
-	) {
-		console.log("hi");
-		console.log(priorityStates);
-		console.log("conditionStates");
-		console.log(
-			conditionStates.map(
-				(e) =>
-					e.startChar +
-					e.endChar +
-					e.type +
-					e.priority +
-					e.isValid +
-					e.isSelected
-			)
-		);
-	}
 	if (priorityStates.length === 0) {
 		return nextWords;
-	}
-	if (
-		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
-	) {
-		console.log("hi");
 	}
 	const containsMap: Record<string, { priority: number }> = {};
 	const endswithMap: Record<string, { priority: number }> = {};
@@ -172,13 +144,6 @@ export function sortByCondition(
 			};
 		return a_condition.priority - b_condition.priority;
 	});
-	if (
-		sortedWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length >
-		0
-	) {
-		console.log("hi2");
-		console.log(sortedWords.map((e) => e.word[0] + e.word[1]));
-	}
 	return sortedWords;
 }
 export function sortByConditionOnStrings(
@@ -618,43 +583,7 @@ export function getNextWords(
 
 	return nextWords;
 }
-// 	[key: string]: {
-// 		number: number;
-// 		charType: "endswith" | "startswith" | "contains";
-// 	};
-// };
-// //todo
-// export const getCustomConditionPriority = (
-// 	word: string,
-// 	priorityMap: CustomConditionPriorityMap
-// ) => {
-// 	const priority =
-// 		priorityMap[word]?.charType === "contains"
-// 			? priorityMap[word].number
-// 			: priorityMap[word[1]]?.charType === "endswith"
-// 			? priorityMap[word[1]].number
-// 			: priorityMap[word[0]]?.charType === "startswith"
-// 			? priorityMap[word[0]].number
-// 			: 0;
-// 	if (priority) {
-// 		return priority;
-// 	}
-// 	return 0;
-// };
-// export const getCustomConditionIsSelected = (
-// 	charType: "endswith" | "startswith" | "contains",
-// 	startChar: string,
-// 	endChar: string,
-// 	word: string
-// ) => {
-// 	return charType === "contains" && word[0] === startChar && word[1] === endChar
-// 		? true
-// 		: charType === "endswith" && word[1] === endChar
-// 		? true
-// 		: charType === "startswith" && word[0] === startChar
-// 		? true
-// 		: false;
-// };
+let testcount = 0;
 export function isWin(
 	namedRule: string,
 	chanGraph: MultiDiGraph,
@@ -666,6 +595,7 @@ export function isWin(
 	customPriority?: Record<string, number>
 ) {
 	const conditions = customConditionEngine?.getValidConditions();
+
 	if (
 		conditions &&
 		conditions.filter((e) => e.type === "win" && e.isSelected && e.isValid)
@@ -709,18 +639,14 @@ export function isWin(
 	const sortedNextWords = sortByCondition(conditions, nextWords);
 
 	for (let { word, isLoop } of sortedNextWords) {
-		if (word[0] === "업" && word[1] === "름") {
-			console.log(word);
-			console.log("업시름");
-		}
 		const nextCustomConditionEngine = customConditionEngine?.copy();
-		nextCustomConditionEngine?.updateState(word[0] + word[1]);
-
-		if (word[0] === "업" && word[1] === "름") {
-			console.log(nextCustomConditionEngine?.getValidConditions());
-		}
 		const nextChanGraph = chanGraph.copy();
 		const nextWordGraph = wordGraph.copy();
+		nextWordGraph.clearNodeInfo();
+		nextChanGraph.clearNodeInfo();
+		pruningWinLos(nextChanGraph, nextWordGraph);
+		pruningWinLosCir(nextChanGraph, nextWordGraph);
+		nextCustomConditionEngine.updateState(word[0] + word[1]);
 		if (pushCallback) {
 			pushCallback(word[0], word[1]);
 		}
@@ -730,10 +656,6 @@ export function isWin(
 			nextWordGraph.removeEdge(word[0], word[1], 1);
 			//todo: condition update
 		}
-		nextWordGraph.clearNodeInfo();
-		nextChanGraph.clearNodeInfo();
-		pruningWinLos(nextChanGraph, nextWordGraph);
-		pruningWinLosCir(nextChanGraph, nextWordGraph);
 		const win = isWin(
 			namedRule,
 			nextChanGraph,

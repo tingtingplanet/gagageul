@@ -229,7 +229,6 @@ export default function CustomConditionPage() {
 			({ id, errors, ...condition }) => condition
 		);
 		setCustomConditions(formattedConditions);
-		console.log(customConditions);
 	}, [conditions, setCustomConditions]);
 
 	// Add a new condition

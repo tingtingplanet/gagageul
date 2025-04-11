@@ -133,7 +133,6 @@ export function DFSSearch() {
 
 		const customConditionEngine = new CustomConditionEngine(customConditions);
 		customConditionEngine.initialize(engine!.words);
-		console.log(customConditionEngine.conditionStates);
 
 		const nextRoutesInfo_ = getNextWords(
 			engine!.chanGraph,
@@ -184,7 +183,6 @@ export function DFSSearch() {
 		}));
 		const startChar = sortedNextRoutesInfo_[0];
 		setNextRoutesInfo(sortedNextRoutesInfo_);
-		console.log(sortedNextRoutesInfo_);
 
 		worker.current.postMessage({
 			action: "startAnalysis",
@@ -507,7 +505,6 @@ export function DFSSearchAllRoutes() {
 				type: "module",
 			}
 		);
-		console.log(sortedNextRoutesInfo_);
 
 		worker.current.postMessage({
 			action: "startAnalysis",

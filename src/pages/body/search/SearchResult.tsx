@@ -1013,7 +1013,6 @@ function WordsResult() {
 		e.searchTab,
 		e.setSearchTab,
 	]);
-	console.log(inputType);
 	return (
 		<>
 			<div className="shadow-[inset_0_-1px_0_0_hsl(var(--border))] px-6 md:px-8 lg:px-10 flex whitespace-nowrap overflow-auto gap-4 md:gap-5 w-full min-h-1 scrollbar-none">
