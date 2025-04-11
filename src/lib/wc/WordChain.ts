@@ -64,7 +64,9 @@ export class CustomConditionEngine {
 			isInitialized: false,
 		}));
 	}
-
+	// except: 5개 있는데 3개 이하이려면 2개 쓰고부터 조건 발동
+	// 5-3 = 2
+	// include: 5개 있는데 3개 이상 이려면 2개 이상 쓰면 안됨
 	initialize(words: string[]) {
 		// console.log("initialize", this.conditionStates);
 		// Initialize includeWords counts based on the word set
@@ -74,7 +76,7 @@ export class CustomConditionEngine {
 				const count = words.filter(
 					(w) => w.at(0) === word.at(0) && w.at(-1) === word.at(-1)
 				).length;
-				state.includeWords[word] = count - (state.includeWords[word] ?? 0);
+				state.includeWords[word] = count - (state.includeWords[word] ?? 0); // 3개있는데 3개 이상하려면 0이상이어야함
 				if (state.includeWords[word] < 0) {
 					state.isValid = false;
 				}
@@ -83,8 +85,8 @@ export class CustomConditionEngine {
 				const count = words.filter(
 					(w) => w.at(0) === word.at(0) && w.at(-1) === word.at(-1)
 				).length;
-				state.exceptWords[word] = (state.exceptWords[word] ?? 0) - count;
-				if (state.exceptWords[word] < 0) {
+				state.exceptWords[word] = count - (state.exceptWords[word] ?? 0); // 3개있는데 3개 이하이려면 처음부터 true, 즉 delete 되어야함 4개있는데 3개 이하이려면 1개 써야함
+				if (state.exceptWords[word] <= 0) {
 					delete state.exceptWords[word];
 				}
 			}
@@ -117,7 +119,7 @@ export class CustomConditionEngine {
 		for (const state of this.conditionStates) {
 			// Update exceptWords counts
 			if (word in state.exceptWords) {
-				if (state.exceptWords[word] > 0) {
+				if (state.exceptWords[word] > 1) {
 					state.exceptWords[word] = Math.max(0, state.exceptWords[word] - 1);
 				} else {
 					// 예외 단어가 더 이상 남아있지 않음. key 제거
