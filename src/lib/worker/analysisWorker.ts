@@ -7,7 +7,7 @@ import {
 	pruningWinLosCir,
 } from "../wc/algorithms";
 import { MultiDiGraph, objToMultiDiGraph } from "../wc/multidigraph";
-import { Char } from "../wc/WordChain";
+import { Char, CustomConditionEngine } from "../wc/WordChain";
 
 export type payload = {
 	action: "startAnalysis" | "IDS:startAnalysis";
@@ -28,8 +28,8 @@ const analysis = ({
 	startChar,
 	exceptWord,
 	customPriority,
-}: // customConditionStates = [],
-{
+	customConditionEngine = new CustomConditionEngine([]),
+}: {
 	namedRule: string;
 	withStack: boolean;
 	chanGraph: MultiDiGraph;
@@ -37,11 +37,17 @@ const analysis = ({
 	startChar: Char;
 	exceptWord?: Char[];
 	customPriority?: Record<string, number>;
-	// customConditionStates?: CustomConditionState[];
+	customConditionEngine?: CustomConditionEngine;
 }) => {
+	customConditionEngine = new CustomConditionEngine(
+		customConditionEngine.conditionStates
+	);
 	chanGraph = objToMultiDiGraph(chanGraph);
 	wordGraph = objToMultiDiGraph(wordGraph);
 	if (exceptWord) {
+		customConditionEngine.updateState(exceptWord[0] + exceptWord[1]);
+		console.log(customConditionEngine.conditionStates);
+		customConditionEngine.getValidConditions();
 		if (wordGraph.nodes[exceptWord[0]].loop === exceptWord[1]) {
 			wordGraph.nodes[exceptWord[0]].loop = undefined;
 		} else {
@@ -65,6 +71,7 @@ const analysis = ({
 				chanGraph,
 				wordGraph,
 				startChar,
+				customConditionEngine,
 				(head, tail) => {
 					wordStack.push([head!, tail!]);
 					self.postMessage({ action: "stackChange", data: wordStack });
@@ -94,19 +101,19 @@ const analysis = ({
 					self.postMessage({ action: "stackChange", data: wordStack });
 				},
 				customPriority
-				// customConditionStates
 		  )
 		: isWin(
 				namedRule,
 				chanGraph,
 				wordGraph,
 				startChar,
+				customConditionEngine,
 				undefined,
 				undefined,
 				customPriority
 				// customConditionStates
 		  );
-	console.log(maxBranch);
+	// console.log(maxBranch);
 	self.postMessage({
 		action: "end",
 		data: {

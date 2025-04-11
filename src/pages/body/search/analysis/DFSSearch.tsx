@@ -8,8 +8,10 @@ import {
 	getNextWords,
 	nextRouteCharSortKey,
 	nextWordSortKey,
+	sortByCondition,
+	sortByConditionOnStrings,
 } from "@/lib/wc/algorithms";
-import { Char, Word } from "@/lib/wc/WordChain";
+import { Char, CustomConditionEngine, Word } from "@/lib/wc/WordChain";
 import { josa } from "es-hangul";
 import { CornerDownRight, Play } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -24,7 +26,6 @@ export function DFSSearch() {
 		setExceptWords,
 		customPriority,
 		customConditions,
-		// customCondition,
 	] = useWC((e) => [
 		e.namedRule,
 		e.searchInputValue,
@@ -35,7 +36,6 @@ export function DFSSearch() {
 		e.setExceptWords,
 		e.customPriority,
 		e.customConditions,
-		// e.customCondition,
 	]);
 
 	const [wordStack, setWordStack] = useState<Word[]>([]);
@@ -54,7 +54,7 @@ export function DFSSearch() {
 			switch (data.action) {
 				case "stackChange":
 					setWordStack((stack) => {
-						console.log("stackchange", stack);
+						// console.log("stackchange", stack);
 						return stack.length > data.data.length
 							? stack.splice(0, stack.length - 1)
 							: [
@@ -75,11 +75,13 @@ export function DFSSearch() {
 						({ win }) => win === undefined
 					);
 					setWordStack([]);
+					// 승패만 처리하고 nextroutes info는 그냥 똑같음
 					setNextRoutesInfo((e) => {
+						//기존값 처리
 						const result = [...e!];
-
+						// 탐색 종료 단어 처리
 						result[endedWordIdx].win = !win;
-
+						// 최대 스택 처리
 						const specifiedMaxStack: Word[] = [];
 
 						for (const [head, tail] of maxStack) {
@@ -96,18 +98,6 @@ export function DFSSearch() {
 					});
 					const startChar = nextRoutesInfo[endedWordIdx + 1];
 					if (endedWordIdx !== nextRoutesInfo.length - 1 && win) {
-						// const customConditionStates = customConditions.map(
-						// 	(customCondition) => ({
-						// 		customCondition,
-						// 		isSelected: getCustomConditionIsSelected(
-						// 			customCondition.charType,
-						// 			customCondition.startChar,
-						// 			customCondition.endChar,
-						// 			startChar.word.at(engine!.rule.headIdx)! +
-						// 				startChar.word.at(engine!.rule.tailIdx)!
-						// 		),
-						// 	})
-						// );
 						worker.current.postMessage({
 							action: "startAnalysis",
 							data: {
@@ -127,7 +117,6 @@ export function DFSSearch() {
 									),
 								],
 								customPriority: customPriority,
-								// customConditionStates: customConditionStates,
 							},
 						});
 					}
@@ -142,6 +131,10 @@ export function DFSSearch() {
 			return;
 		}
 
+		const customConditionEngine = new CustomConditionEngine(customConditions);
+		customConditionEngine.initialize(engine!.words);
+		console.log(customConditionEngine.conditionStates);
+
 		const nextRoutesInfo_ = getNextWords(
 			engine!.chanGraph,
 			engine!.wordGraph,
@@ -153,7 +146,6 @@ export function DFSSearch() {
 			.map(([head, tail]) => ({
 				word: engine!.wordMap.select(head, tail)[0],
 			}));
-
 		if (worker.current) {
 			worker.current.terminate();
 		}
@@ -183,73 +175,16 @@ export function DFSSearch() {
 					);
 			  })
 			: nextRoutesInfo_;
-		// 초기 단어에 대해서 조건 충족 여부 확인 및 isSelected 생성
-		// const customConditionPriorityMap: CustomConditionPriorityMap = {};
-		// searchInputValue.length > 1 &&
-		// 	customConditions.map((customCondition) => {
-		// 		const exceptWords = customCondition.exceptWords.filter(
-		// 			(e) =>
-		// 				!(
-		// 					e[0] === searchInputValue.at(engine!.rule.headIdx)! &&
-		// 					e[1] === searchInputValue.at(engine!.rule.tailIdx)!
-		// 				)
-		// 		);
-		// 		if (exceptWords.length === 0) {
-		// 			return undefined;
-		// 		}
-		// 		const includeWords = customCondition.includeWords.filter(
-		// 			(e) =>
-		// 				!(
-		// 					e[0] === searchInputValue.at(engine!.rule.headIdx)! &&
-		// 					e[1] === searchInputValue.at(engine!.rule.tailIdx)!
-		// 				)
-		// 		);
-		// 		if (includeWords.length === 0) {
-		// 			customConditionPriorityMap[
-		// 				customCondition.startChar + customCondition.endChar
-		// 			] = {
-		// 				number: customCondition.priority,
-		// 				charType: customCondition.charType,
-		// 			};
-		// 		}
-		// 	});
-		// if (customConditionPriorityMap) {
-		// 	sortedNextRoutesInfo.sort((a, b) => {
-		// 		const aPriority = getCustomConditionPriority(
-		// 			a.word.at(engine!.rule.headIdx)! + a.word.at(engine!.rule.tailIdx)!,
-		// 			customConditionPriorityMap
-		// 		);
-		// 		const bPriority = getCustomConditionPriority(
-		// 			b.word.at(engine!.rule.headIdx)! + b.word.at(engine!.rule.tailIdx)!,
-		// 			customConditionPriorityMap
-		// 		);
-		// 		return aPriority - bPriority;
-		// 	});
-		// }
-
-		const startChar = sortedNextRoutesInfo[0];
-		// const customConditionStates = customConditions.map((customCondition) => {
-		// 	return {
-		// 		customCondition: {
-		// 			...customCondition,
-		// 			includeWords: customCondition.includeWords.filter(
-		// 				(e) =>
-		// 					!(
-		// 						e[0] === startChar.word.at(engine!.rule.headIdx)! &&
-		// 						e[1] === startChar.word.at(engine!.rule.tailIdx)!
-		// 					)
-		// 			),
-		// 		},
-		// 		isSelected: getCustomConditionIsSelected(
-		// 			customCondition.charType,
-		// 			customCondition.startChar,
-		// 			customCondition.endChar,
-		// 			startChar.word.at(engine!.rule.headIdx)! +
-		// 				startChar.word.at(engine!.rule.tailIdx)!
-		// 		),
-		// 	};
-		// });
-		setNextRoutesInfo(sortedNextRoutesInfo);
+		const conditionStates = customConditionEngine.getValidConditions();
+		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
+			conditionStates,
+			sortedNextRoutesInfo.map((e) => e.word)
+		).map((e) => ({
+			word: e,
+		}));
+		const startChar = sortedNextRoutesInfo_[0];
+		setNextRoutesInfo(sortedNextRoutesInfo_);
+		console.log(sortedNextRoutesInfo_);
 
 		worker.current.postMessage({
 			action: "startAnalysis",
@@ -264,9 +199,7 @@ export function DFSSearch() {
 					startChar.word.at(engine!.rule.tailIdx),
 				],
 				customPriority: customPriority,
-				// customConditionStates: customConditionStates.filter(
-				// 	(e) => e !== undefined
-				// ),
+				customConditionEngine: customConditionEngine,
 			},
 		});
 
@@ -452,6 +385,7 @@ export function DFSSearchAllRoutes() {
 		setSearchInputValue,
 		exceptWords,
 		setExceptWords,
+		customConditions,
 	] = useWC((e) => [
 		e.namedRule,
 		e.engine,
@@ -459,6 +393,7 @@ export function DFSSearchAllRoutes() {
 		e.setSearchInputValue,
 		e.exceptWords,
 		e.setExceptWords,
+		e.customConditions,
 	]);
 
 	const [wordStack, setWordStack] = useState<Word[]>([]);
@@ -550,7 +485,16 @@ export function DFSSearchAllRoutes() {
 			.map((e) => ({
 				char: e.char,
 			}));
-		setNextRoutesInfo(nextRoutesInfo_);
+		const customConditionEngine = new CustomConditionEngine(customConditions);
+		customConditionEngine.initialize(engine!.words);
+		const conditionStates = customConditionEngine.getValidConditions();
+		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
+			conditionStates,
+			nextRoutesInfo_.map((e) => e.char)
+		).map((e) => ({
+			char: e,
+		}));
+		setNextRoutesInfo(sortedNextRoutesInfo_);
 
 		if (worker.current) {
 			worker.current.terminate();
@@ -563,6 +507,7 @@ export function DFSSearchAllRoutes() {
 				type: "module",
 			}
 		);
+		console.log(sortedNextRoutesInfo_);
 
 		worker.current.postMessage({
 			action: "startAnalysis",
@@ -571,7 +516,7 @@ export function DFSSearchAllRoutes() {
 				withStack: true,
 				chanGraph: engine!.chanGraph,
 				wordGraph: engine!.wordGraph,
-				startChar: nextRoutesInfo_[0].char,
+				startChar: sortedNextRoutesInfo_[0].char,
 				exceptWords: undefined,
 			},
 		});

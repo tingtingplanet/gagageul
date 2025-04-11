@@ -16,6 +16,7 @@ import { sampleRules } from "../wc/rules";
 import {
 	Char,
 	CharType,
+	CustomCondition,
 	objToInstance,
 	SearchResult,
 	WCDisplay,
@@ -80,21 +81,6 @@ export type GameInfo = {
 	isPlaying: boolean;
 	winner?: "computer" | "me";
 };
-export interface CustomCondition {
-	exceptWords: string[]; //must
-	includeWords: string[]; // optional
-	startChar: string; //optional
-	endChar: string; // optional
-	charType: "endswith" | "startswith" | "contains"; // must
-	type: "win" | "los" | "priority"; // must , priority 일시, priority 필수
-	priority: number; // optional
-}
-
-export type CustomConditionState = {
-	customCondition: CustomCondition;
-	isSelected: boolean;
-};
-
 export interface WCInfo {
 	value: string;
 	setValue: (value: string) => void;
@@ -237,35 +223,7 @@ export const useWC = create<WCInfo>((set, get) => ({
 		});
 	},
 
-	// export interface CustomCondition {
-	// 	exceptWords: string[];
-	// 	includeWords: string[];
-	// 	priority: {
-	// 		startChar: string;
-	// 		endChar: string;
-	// 		priority: number | "win" | "los";
-	// 	};
-	// }
-	// customCondition: {
-	// 	exceptWords: ["뚫딿"],
-	// 	includeWords: ["업름"],
-	// 	priority: {
-	// 		startChar: "늠",
-	// 		endChar: "준",
-	// 		priority: "los",
-	// 	},
-	// },
-	customConditions: [
-		{
-			exceptWords: ["뚫딿"],
-			includeWords: ["업름"],
-			startChar: "늠",
-			endChar: "준",
-			charType: "contains",
-			type: "los",
-			priority: -1,
-		},
-	],
+	customConditions: [],
 	setCustomConditions: (customConditions: CustomCondition[]) =>
 		set(() => ({ customConditions })),
 	searchResult: undefined,
