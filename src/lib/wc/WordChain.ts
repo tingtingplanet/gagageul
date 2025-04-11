@@ -135,27 +135,32 @@ export class CustomConditionEngine {
 					state.isValid = false;
 				}
 			}
-			const conditions = this.getValidConditions();
-			conditions.forEach((condition) => {
-				if (!condition.isValid) {
-					condition.isSelected = false;
-					return;
-				}
-				if (
-					(condition.endChar === word.at(-1) &&
-						condition.conditionType === "endswith") ||
-					(condition.startChar === word.at(0) &&
-						condition.conditionType === "startswith") ||
-					(condition.conditionType === "contains" &&
-						word.includes(condition.startChar) &&
-						word.includes(condition.endChar))
-				) {
-					// console.log("hellow,,,,");
-					condition.isSelected = true;
-				} else {
-					condition.isSelected = false;
-				}
-			});
+
+			const allExceptWordsUsed = Object.values(state.exceptWords).every(
+				(count) => count === 0
+			);
+
+			// Check if includeWords are still valid (all counts are >= 0)
+			const includeWordsValid = Object.values(state.includeWords).every(
+				(count) => count >= 0
+			);
+
+			state.isValid = allExceptWordsUsed && includeWordsValid;
+			if (
+				state.isValid &&
+				((state.endChar === word.at(-1) &&
+					state.conditionType === "endswith") ||
+					(state.startChar === word.at(0) &&
+						state.conditionType === "startswith") ||
+					(state.conditionType === "contains" &&
+						word.includes(state.startChar) &&
+						word.includes(state.endChar)))
+			) {
+				console.log("hellow,,,,");
+				state.isSelected = true;
+			} else {
+				state.isSelected = false;
+			}
 		}
 	}
 	copy() {

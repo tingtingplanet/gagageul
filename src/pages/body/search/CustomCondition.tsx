@@ -104,9 +104,10 @@ function WordCountPairInput({
 					<input
 						type="number"
 						value={pair.count}
-						onChange={(e) =>
-							updatePair(pair.id, { count: parseInt(e.target.value) || 1 })
-						}
+						onChange={(e) => {
+							const value = parseInt(e.target.value);
+							updatePair(pair.id, { count: isNaN(value) ? 1 : value });
+						}}
 						className="w-20 border rounded px-3 py-2"
 					/>
 					<button
