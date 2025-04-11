@@ -16,6 +16,7 @@ import { sampleRules } from "../wc/rules";
 import {
 	Char,
 	CharType,
+	CustomCondition,
 	objToInstance,
 	SearchResult,
 	WCDisplay,
@@ -60,6 +61,12 @@ export type Chat = {
 	chatIdx?: number;
 	content: React.ReactNode;
 };
+export type Priority = {
+	startChar: string;
+	endChar: string;
+	priority: number;
+	type: "endswith" | "startswith" | "contains";
+};
 
 export type GameInfo = {
 	strength: 0 | 1 | 2;
@@ -74,23 +81,14 @@ export type GameInfo = {
 	isPlaying: boolean;
 	winner?: "computer" | "me";
 };
-export interface CustomCondition {
-	exceptWords: string[];
-	includeWords: string[];
-	priority: {
-		startChar: string;
-		endChar: string;
-		priority: number | "win" | "los";
-	};
-}
 export interface WCInfo {
 	value: string;
 	setValue: (value: string) => void;
 	searchInputValue: string;
 	setSearchInputValue: (value: string, preventPushState?: boolean) => void;
 	exceptWords: string[];
-	customCondition: CustomCondition | null;
-	setCustomCondition: (customCondition: CustomCondition | null) => void;
+	customConditions: CustomCondition[];
+	setCustomConditions: (customConditions: CustomCondition[]) => void;
 	setExceptWords: (exceptWords: string[]) => void;
 	customPriority: Record<string, number> | null;
 	setCustomPriority: (customPriority: Record<string, number>) => void;
@@ -225,27 +223,9 @@ export const useWC = create<WCInfo>((set, get) => ({
 		});
 	},
 
-	// export interface CustomCondition {
-	// 	exceptWords: string[];
-	// 	includeWords: string[];
-	// 	priority: {
-	// 		startChar: string;
-	// 		endChar: string;
-	// 		priority: number | "win" | "los";
-	// 	};
-	// }
-	// customCondition: {
-	// 	exceptWords: ["뚫딿"],
-	// 	includeWords: ["업름"],
-	// 	priority: {
-	// 		startChar: "늠",
-	// 		endChar: "준",
-	// 		priority: "los",
-	// 	},
-	// },
-	customCondition: null,
-	setCustomCondition: (customCondition: CustomCondition | null) =>
-		set(() => ({ customCondition })),
+	customConditions: [],
+	setCustomConditions: (customConditions: CustomCondition[]) =>
+		set(() => ({ customConditions })),
 	searchResult: undefined,
 	isMoreOpen: false,
 	setIsMoreOpen: (isMoreOpen: boolean) => set(() => ({ isMoreOpen })),

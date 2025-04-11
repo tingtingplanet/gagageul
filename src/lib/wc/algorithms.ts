@@ -1,9 +1,19 @@
-import { CustomCondition } from "../store/useWC";
 import { arraysEqual, arrayToKeyMap } from "../utils";
-import { CustomConditionState } from "../worker/analysisWorker";
 import { guelPrecedenceMap, precedenceMap } from "./analysisPrecedence";
 import { MultiDiGraph } from "./multidigraph";
-import { Char } from "./WordChain";
+import { Char, CustomConditionEngine, CustomConditionState } from "./WordChain";
+// export const deepCopyCustomConditionState: (
+// 	obj: CustomConditionState
+// ) => CustomConditionState = (obj: CustomConditionState) => {
+// 	return {
+// 		...obj,
+// 		customCondition: {
+// 			...obj.customCondition,
+// 			exceptWords: [...obj.customCondition.exceptWords],
+// 			includeWords: [...obj.customCondition.includeWords],
+// 		},
+// 	};
+// };
 
 export function pruningWinLos(
 	chanGraph: MultiDiGraph,
@@ -93,6 +103,113 @@ export function pruningWinLos(
 	return;
 }
 
+export function sortByCondition(
+	conditionStates: CustomConditionState[],
+	nextWords: { word: Char[]; isLoop: boolean; moveNum?: number }[]
+) {
+	if (
+		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
+	) {
+		console.log(nextWords.map((e) => e.word[0] + e.word[1]));
+	}
+	const priorityStates = conditionStates.filter(
+		(e) => e.isValid && e.type === "priority"
+	);
+	if (
+		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
+	) {
+		console.log("hi");
+		console.log(priorityStates);
+		console.log("conditionStates");
+		console.log(
+			conditionStates.map(
+				(e) =>
+					e.startChar +
+					e.endChar +
+					e.type +
+					e.priority +
+					e.isValid +
+					e.isSelected
+			)
+		);
+	}
+	if (priorityStates.length === 0) {
+		return nextWords;
+	}
+	if (
+		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
+	) {
+		console.log("hi");
+	}
+	const containsMap: Record<string, { priority: number }> = {};
+	const endswithMap: Record<string, { priority: number }> = {};
+	const startswithMap: Record<string, { priority: number }> = {};
+	priorityStates.forEach((e) => {
+		if (e.conditionType === "contains") {
+			containsMap[e.startChar + e.endChar] = {
+				priority: e.priority,
+			};
+		} else if (e.conditionType === "endswith") {
+			endswithMap[e.endChar] = {
+				priority: e.priority,
+			};
+		} else if (e.conditionType === "startswith") {
+			startswithMap[e.startChar] = {
+				priority: e.priority,
+			};
+		}
+	});
+	const sortedWords = nextWords.sort((a, b) => {
+		const a_condition = containsMap[a.word[0] + a.word[1]] ??
+			endswithMap[a.word[1]] ??
+			startswithMap[a.word[0]] ?? {
+				priority: 0,
+			};
+		const b_condition = containsMap[b.word[0] + b.word[1]] ??
+			endswithMap[b.word[1]] ??
+			startswithMap[b.word[0]] ?? {
+				priority: 0,
+			};
+		return a_condition.priority - b_condition.priority;
+	});
+	if (
+		sortedWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length >
+		0
+	) {
+		console.log("hi2");
+		console.log(sortedWords.map((e) => e.word[0] + e.word[1]));
+	}
+	return sortedWords;
+}
+export function sortByConditionOnStrings(
+	conditionStates: CustomConditionState[],
+	nextWords: string[]
+) {
+	const priorityStates = conditionStates.filter(
+		(e) => e.isValid && e.type === "priority"
+	);
+	if (priorityStates.length === 0) {
+		return nextWords;
+	}
+	const containsMap: Record<string, number> = {};
+	const endswithMap: Record<string, number> = {};
+	const startswithMap: Record<string, number> = {};
+	priorityStates.forEach((e) => {
+		if (e.conditionType === "contains") {
+			containsMap[e.startChar + e.endChar] = e.priority;
+		} else if (e.conditionType === "endswith") {
+			endswithMap[e.endChar] = e.priority;
+		} else if (e.conditionType === "startswith") {
+			startswithMap[e.startChar] = e.priority;
+		}
+	});
+	const sortedWords = nextWords.sort((a, b) => {
+		const a_condition = containsMap[a[0] + a[1]] ?? 0;
+		const b_condition = containsMap[b[0] + b[1]] ?? 0;
+		return a_condition - b_condition;
+	});
+	return sortedWords;
+}
 export function getSingleChars(chanGraph: MultiDiGraph) {
 	const chars = Object.keys(chanGraph.nodes).filter(
 		(e) => !chanGraph.nodes[e].type
@@ -501,30 +618,68 @@ export function getNextWords(
 
 	return nextWords;
 }
-let testcounter = 10;
+// 	[key: string]: {
+// 		number: number;
+// 		charType: "endswith" | "startswith" | "contains";
+// 	};
+// };
+// //todo
+// export const getCustomConditionPriority = (
+// 	word: string,
+// 	priorityMap: CustomConditionPriorityMap
+// ) => {
+// 	const priority =
+// 		priorityMap[word]?.charType === "contains"
+// 			? priorityMap[word].number
+// 			: priorityMap[word[1]]?.charType === "endswith"
+// 			? priorityMap[word[1]].number
+// 			: priorityMap[word[0]]?.charType === "startswith"
+// 			? priorityMap[word[0]].number
+// 			: 0;
+// 	if (priority) {
+// 		return priority;
+// 	}
+// 	return 0;
+// };
+// export const getCustomConditionIsSelected = (
+// 	charType: "endswith" | "startswith" | "contains",
+// 	startChar: string,
+// 	endChar: string,
+// 	word: string
+// ) => {
+// 	return charType === "contains" && word[0] === startChar && word[1] === endChar
+// 		? true
+// 		: charType === "endswith" && word[1] === endChar
+// 		? true
+// 		: charType === "startswith" && word[0] === startChar
+// 		? true
+// 		: false;
+// };
 export function isWin(
 	namedRule: string,
 	chanGraph: MultiDiGraph,
 	wordGraph: MultiDiGraph,
 	currChar: Char,
+	customConditionEngine: CustomConditionEngine = new CustomConditionEngine([]),
 	pushCallback?: (head?: Char, tail?: Char) => void,
 	popCallback?: (win: boolean) => void,
-	customPriority?: Record<string, number>,
-	customConditionState?: CustomConditionState
+	customPriority?: Record<string, number>
 ) {
-	if (customConditionState) {
-		if (
-			customConditionState.isSelected &&
-			customConditionState.customCondition.priority.priority === "win"
-		) {
-			return false;
-		} else if (
-			customConditionState.isSelected &&
-			customConditionState.customCondition.priority.priority === "los"
-		) {
-			return true;
-		}
+	const conditions = customConditionEngine?.getValidConditions();
+	if (
+		conditions &&
+		conditions.filter((e) => e.type === "win" && e.isSelected && e.isValid)
+			.length > 0
+	) {
+		return false;
+	} else if (
+		conditions &&
+		conditions.filter((e) => e.type === "los" && e.isSelected && e.isValid)
+			.length > 0
+	) {
+		return true;
 	}
+
 	if (
 		chanGraph.nodes[currChar].type === "win" ||
 		chanGraph.nodes[currChar].type === "wincir"
@@ -537,8 +692,9 @@ export function isWin(
 	) {
 		return false;
 	}
-	const nextWords = getNextWords(chanGraph, wordGraph, currChar, true);
 
+	const nextWords = getNextWords(chanGraph, wordGraph, currChar, true);
+	//추가 소팅 2회
 	nextWords.sort((a, b) => nextWordSortKey(a, b, namedRule));
 	if (customPriority) {
 		nextWords.sort((a, b) => {
@@ -550,29 +706,21 @@ export function isWin(
 			);
 		});
 	}
-	if (
-		customConditionState?.is_include &&
-		typeof customConditionState.customCondition.priority.priority === "number"
-	) {
-		nextWords.sort((a, b) => {
-			const aPriority =
-				customConditionState!.customCondition.priority.startChar == a.word[0] &&
-				customConditionState!.customCondition.priority.endChar == a.word[1]
-					? (customConditionState!.customCondition.priority.priority as number)
-					: 0;
-			const bPriority =
-				customConditionState!.customCondition.priority.startChar == b.word[0] &&
-				customConditionState!.customCondition.priority.endChar == b.word[1]
-					? (customConditionState!.customCondition.priority.priority as number)
-					: 0;
-			return aPriority - bPriority;
-		});
-	}
+	const sortedNextWords = sortByCondition(conditions, nextWords);
 
-	for (let { word, isLoop } of nextWords) {
+	for (let { word, isLoop } of sortedNextWords) {
+		if (word[0] === "업" && word[1] === "름") {
+			console.log(word);
+			console.log("업시름");
+		}
+		const nextCustomConditionEngine = customConditionEngine?.copy();
+		nextCustomConditionEngine?.updateState(word[0] + word[1]);
+
+		if (word[0] === "업" && word[1] === "름") {
+			console.log(nextCustomConditionEngine?.getValidConditions());
+		}
 		const nextChanGraph = chanGraph.copy();
 		const nextWordGraph = wordGraph.copy();
-		// 단어 삭제
 		if (pushCallback) {
 			pushCallback(word[0], word[1]);
 		}
@@ -580,60 +728,21 @@ export function isWin(
 			nextWordGraph.nodes[word[0]].loop = undefined;
 		} else {
 			nextWordGraph.removeEdge(word[0], word[1], 1);
+			//todo: condition update
 		}
 		nextWordGraph.clearNodeInfo();
 		nextChanGraph.clearNodeInfo();
 		pruningWinLos(nextChanGraph, nextWordGraph);
 		pruningWinLosCir(nextChanGraph, nextWordGraph);
-		if (
-			customConditionState &&
-			customConditionState.customCondition.exceptWords.filter(
-				(e) => e[0] === word[0] && e[1] === word[1]
-			).length > 0
-		) {
-			customConditionState = null;
-		}
-		if (customConditionState) {
-			const customCondition = customConditionState.customCondition;
-			// 포함조건
-			if (
-				!customConditionState.is_include &&
-				customCondition.includeWords.filter(
-					(e) => e[0] === word[0] && e[1] === word[1]
-				).length > 0
-			) {
-				customConditionState = {
-					...customConditionState,
-					is_include: true,
-				};
-			}
-			// word와 단어가 같은지 확인
-			if (customConditionState) {
-				const isSelected =
-					customCondition.priority.startChar == word[0] &&
-					customCondition.priority.endChar == word[1];
-				if (!customConditionState.isSelected && isSelected) {
-					customConditionState = {
-						...customConditionState,
-						isSelected: true,
-					};
-				} else if (customConditionState.isSelected && !isSelected) {
-					customConditionState = {
-						...customConditionState,
-						isSelected: false,
-					};
-				}
-			}
-		}
 		const win = isWin(
 			namedRule,
 			nextChanGraph,
 			nextWordGraph,
 			word[1],
+			nextCustomConditionEngine,
 			pushCallback,
 			popCallback,
-			customPriority,
-			customConditionState
+			customPriority
 		);
 		if (popCallback) {
 			popCallback(!win);

@@ -8,12 +8,13 @@ import {
 	getNextWords,
 	nextRouteCharSortKey,
 	nextWordSortKey,
+	sortByCondition,
+	sortByConditionOnStrings,
 } from "@/lib/wc/algorithms";
-import { Char, Word } from "@/lib/wc/WordChain";
+import { Char, CustomConditionEngine, Word } from "@/lib/wc/WordChain";
 import { josa } from "es-hangul";
 import { CornerDownRight, Play } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
-
 export function DFSSearch() {
 	const [
 		namedRule,
@@ -24,7 +25,7 @@ export function DFSSearch() {
 		exceptWords,
 		setExceptWords,
 		customPriority,
-		customCondition,
+		customConditions,
 	] = useWC((e) => [
 		e.namedRule,
 		e.searchInputValue,
@@ -34,7 +35,7 @@ export function DFSSearch() {
 		e.exceptWords,
 		e.setExceptWords,
 		e.customPriority,
-		e.customCondition,
+		e.customConditions,
 	]);
 
 	const [wordStack, setWordStack] = useState<Word[]>([]);
@@ -52,8 +53,9 @@ export function DFSSearch() {
 		worker.current.onmessage = ({ data }) => {
 			switch (data.action) {
 				case "stackChange":
-					setWordStack((stack) =>
-						stack.length > data.data.length
+					setWordStack((stack) => {
+						// console.log("stackchange", stack);
+						return stack.length > data.data.length
 							? stack.splice(0, stack.length - 1)
 							: [
 									...stack,
@@ -62,22 +64,24 @@ export function DFSSearch() {
 										.filter(
 											(e) => !stack.includes(e) && !exceptWords.includes(e)
 										)[0],
-							  ]
-					);
+							  ];
+					});
 					return;
 
-				case "end":
+				case "end": // 글자 하나 탐색 종료
 					const { win, maxStack } = data.data;
 
 					const endedWordIdx = nextRoutesInfo.findIndex(
 						({ win }) => win === undefined
 					);
 					setWordStack([]);
+					// 승패만 처리하고 nextroutes info는 그냥 똑같음
 					setNextRoutesInfo((e) => {
+						//기존값 처리
 						const result = [...e!];
-
+						// 탐색 종료 단어 처리
 						result[endedWordIdx].win = !win;
-
+						// 최대 스택 처리
 						const specifiedMaxStack: Word[] = [];
 
 						for (const [head, tail] of maxStack) {
@@ -92,7 +96,7 @@ export function DFSSearch() {
 
 						return result;
 					});
-
+					const startChar = nextRoutesInfo[endedWordIdx + 1];
 					if (endedWordIdx !== nextRoutesInfo.length - 1 && win) {
 						worker.current.postMessage({
 							action: "startAnalysis",
@@ -127,6 +131,10 @@ export function DFSSearch() {
 			return;
 		}
 
+		const customConditionEngine = new CustomConditionEngine(customConditions);
+		customConditionEngine.initialize(engine!.words);
+		console.log(customConditionEngine.conditionStates);
+
 		const nextRoutesInfo_ = getNextWords(
 			engine!.chanGraph,
 			engine!.wordGraph,
@@ -138,7 +146,6 @@ export function DFSSearch() {
 			.map(([head, tail]) => ({
 				word: engine!.wordMap.select(head, tail)[0],
 			}));
-
 		if (worker.current) {
 			worker.current.terminate();
 		}
@@ -168,8 +175,17 @@ export function DFSSearch() {
 					);
 			  })
 			: nextRoutesInfo_;
-		setNextRoutesInfo(sortedNextRoutesInfo);
-		const startChar = sortedNextRoutesInfo[0];
+		const conditionStates = customConditionEngine.getValidConditions();
+		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
+			conditionStates,
+			sortedNextRoutesInfo.map((e) => e.word)
+		).map((e) => ({
+			word: e,
+		}));
+		const startChar = sortedNextRoutesInfo_[0];
+		setNextRoutesInfo(sortedNextRoutesInfo_);
+		console.log(sortedNextRoutesInfo_);
+
 		worker.current.postMessage({
 			action: "startAnalysis",
 			data: {
@@ -183,7 +199,7 @@ export function DFSSearch() {
 					startChar.word.at(engine!.rule.tailIdx),
 				],
 				customPriority: customPriority,
-				customCondition: customCondition,
+				customConditionEngine: customConditionEngine,
 			},
 		});
 
@@ -369,6 +385,7 @@ export function DFSSearchAllRoutes() {
 		setSearchInputValue,
 		exceptWords,
 		setExceptWords,
+		customConditions,
 	] = useWC((e) => [
 		e.namedRule,
 		e.engine,
@@ -376,6 +393,7 @@ export function DFSSearchAllRoutes() {
 		e.setSearchInputValue,
 		e.exceptWords,
 		e.setExceptWords,
+		e.customConditions,
 	]);
 
 	const [wordStack, setWordStack] = useState<Word[]>([]);
@@ -467,7 +485,16 @@ export function DFSSearchAllRoutes() {
 			.map((e) => ({
 				char: e.char,
 			}));
-		setNextRoutesInfo(nextRoutesInfo_);
+		const customConditionEngine = new CustomConditionEngine(customConditions);
+		customConditionEngine.initialize(engine!.words);
+		const conditionStates = customConditionEngine.getValidConditions();
+		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
+			conditionStates,
+			nextRoutesInfo_.map((e) => e.char)
+		).map((e) => ({
+			char: e,
+		}));
+		setNextRoutesInfo(sortedNextRoutesInfo_);
 
 		if (worker.current) {
 			worker.current.terminate();
@@ -480,6 +507,7 @@ export function DFSSearchAllRoutes() {
 				type: "module",
 			}
 		);
+		console.log(sortedNextRoutesInfo_);
 
 		worker.current.postMessage({
 			action: "startAnalysis",
@@ -488,8 +516,9 @@ export function DFSSearchAllRoutes() {
 				withStack: true,
 				chanGraph: engine!.chanGraph,
 				wordGraph: engine!.wordGraph,
-				startChar: nextRoutesInfo_[0].char,
+				startChar: sortedNextRoutesInfo_[0].char,
 				exceptWords: undefined,
+				customConditionEngine: customConditionEngine,
 			},
 		});
 

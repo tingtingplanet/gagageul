@@ -984,6 +984,8 @@ const tabInfo: Record<string, { name: string; component: ReactNode }[]> = {
 	default: [
 		{ name: "임계 단어", component: <CriticalWords /> },
 		{ name: "필승 전략 탐색", component: <Analysis /> },
+		{ name: "글자 계산 순서", component: <CustomPriority /> },
+		{ name: "단어 계산 순서", component: <CustomCondition /> },
 	],
 	routeChar: [
 		{ name: "첫 글자", component: <SearchResultStartsWith /> },
@@ -1011,7 +1013,7 @@ function WordsResult() {
 		e.searchTab,
 		e.setSearchTab,
 	]);
-
+	console.log(inputType);
 	return (
 		<>
 			<div className="shadow-[inset_0_-1px_0_0_hsl(var(--border))] px-6 md:px-8 lg:px-10 flex whitespace-nowrap overflow-auto gap-4 md:gap-5 w-full min-h-1 scrollbar-none">

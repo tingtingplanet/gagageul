@@ -18,12 +18,148 @@ export type WCRule = {
 	tailIdx: number;
 	manner: number;
 };
+export type WordCount = Record<string, number>;
+
+export type CustomCondition = {
+	exceptWords: WordCount; //must
+	includeWords: WordCount; // optional
+	startChar: string; //optional
+	endChar: string; // optional
+	conditionType: "endswith" | "startswith" | "contains"; // must
+	type: "win" | "los" | "priority"; // must
+	priority: number; // optional
+};
 
 export type Char = string;
 export type CharType = "los" | "win" | "loscir" | "wincir" | "route";
 export type WordType = "win" | "los" | "wincir" | "loscir" | "route" | "return";
 
 export type Word = string;
+export type CustomConditionState = {
+	exceptWords: WordCount; // remaining count of words that need to be used
+	includeWords: WordCount; // remaining count of words that can be used
+	startChar: string;
+	endChar: string;
+	conditionType: "endswith" | "startswith" | "contains";
+	type: "win" | "los" | "priority";
+	priority: number;
+	isSelected: boolean;
+	isValid: boolean; // whether the condition is currently valid
+	isInitialized: boolean; // whether the condition is initialized
+};
+export type Condition = Record<string, number | "win" | "los">;
+export class CustomConditionEngine {
+	conditionStates: CustomConditionState[];
+	constructor(public conditions: CustomCondition[]) {
+		this.conditionStates = conditions.map((condition) => ({
+			exceptWords: condition.exceptWords,
+			includeWords: condition.includeWords,
+			startChar: condition.startChar,
+			endChar: condition.endChar,
+			conditionType: condition.conditionType,
+			type: condition.type,
+			priority: condition.priority,
+			isSelected: false,
+			isValid: true,
+			isInitialized: false,
+		}));
+	}
+
+	initialize(words: string[]) {
+		// console.log("initialize", this.conditionStates);
+		// Initialize includeWords counts based on the word set
+		for (const state of this.conditionStates) {
+			state.isInitialized = true;
+			for (const word in state.includeWords) {
+				const count = words.filter(
+					(w) => w.at(0) === word.at(0) && w.at(-1) === word.at(-1)
+				).length;
+				state.includeWords[word] = count - (state.includeWords[word] ?? 0);
+				if (state.includeWords[word] < 0) {
+					state.isValid = false;
+				}
+			}
+			for (const word in state.exceptWords) {
+				const count = words.filter(
+					(w) => w.at(0) === word.at(0) && w.at(-1) === word.at(-1)
+				).length;
+				state.exceptWords[word] = (state.exceptWords[word] ?? 0) - count;
+				if (state.exceptWords[word] < 0) {
+					delete state.exceptWords[word];
+				}
+			}
+		}
+		console.log(this.conditionStates);
+	}
+
+	getValidConditions(): CustomConditionState[] {
+		// console.log("getValidConditions", this.conditionStates);
+
+		return this.conditionStates.filter((state) => {
+			// Check if all exceptWords are used up (counts are 0)
+			const allExceptWordsUsed = Object.values(state.exceptWords).every(
+				(count) => count === 0
+			);
+
+			// Check if includeWords are still valid (all counts are >= 0)
+			const includeWordsValid = Object.values(state.includeWords).every(
+				(count) => count >= 0
+			);
+
+			state.isValid = allExceptWordsUsed && includeWordsValid;
+			return state.isValid;
+		});
+	}
+
+	updateState(word: string) {
+		// console.log("updateState", this.conditionStates);
+
+		for (const state of this.conditionStates) {
+			// Update exceptWords counts
+			if (word in state.exceptWords) {
+				if (state.exceptWords[word] > 0) {
+					state.exceptWords[word] = Math.max(0, state.exceptWords[word] - 1);
+				} else {
+					// 예외 단어가 더 이상 남아있지 않음. key 제거
+					delete state.exceptWords[word];
+				}
+			}
+
+			// Update includeWords counts
+			if (word in state.includeWords) {
+				state.includeWords[word] = Math.max(-1, state.includeWords[word] - 1);
+				// If we've used more than allowed, mark as invalid
+				if (state.includeWords[word] < 0) {
+					state.isValid = false;
+				}
+			}
+			const conditions = this.getValidConditions();
+			conditions.forEach((condition) => {
+				if (!condition.isValid) {
+					condition.isSelected = false;
+					return;
+				}
+				if (
+					(condition.endChar === word.at(-1) &&
+						condition.conditionType === "endswith") ||
+					(condition.startChar === word.at(0) &&
+						condition.conditionType === "startswith") ||
+					(condition.conditionType === "contains" &&
+						word.includes(condition.startChar) &&
+						word.includes(condition.endChar))
+				) {
+					// console.log("hellow,,,,");
+					condition.isSelected = true;
+				} else {
+					condition.isSelected = false;
+				}
+			});
+		}
+	}
+	copy() {
+		return new CustomConditionEngine(this.conditions);
+	}
+}
 
 export class WCEngine {
 	rule: WCRule;
