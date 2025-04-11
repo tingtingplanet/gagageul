@@ -706,27 +706,19 @@ export function isWin(
 			);
 		});
 	}
-	if (
-		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
-	) {
-		console.log(nextWords.map((e) => e.word[0] + e.word[1]));
-	}
 	const sortedNextWords = sortByCondition(conditions, nextWords);
-	if (
-		nextWords.filter((e) => e.word[0] === "읍" && e.word[1] === "륵").length > 0
-	) {
-		console.log(sortedNextWords.map((e) => e.word[0] + e.word[1]));
-	}
 
 	for (let { word, isLoop } of sortedNextWords) {
-		// if (word[0] === "벽" && word[1] === "깃") {
-		// 	console.log("벽깃기모띠");
-		// }
-		// if (word[0] === "읍" && word[1] === "권") {
-		// 	console.log("읍권기모띠");
-		// }
+		if (word[0] === "업" && word[1] === "름") {
+			console.log(word);
+			console.log("업시름");
+		}
 		const nextCustomConditionEngine = customConditionEngine?.copy();
 		nextCustomConditionEngine?.updateState(word[0] + word[1]);
+
+		if (word[0] === "업" && word[1] === "름") {
+			console.log(nextCustomConditionEngine?.getValidConditions());
+		}
 		const nextChanGraph = chanGraph.copy();
 		const nextWordGraph = wordGraph.copy();
 		if (pushCallback) {

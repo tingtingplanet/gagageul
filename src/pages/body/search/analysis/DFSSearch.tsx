@@ -518,6 +518,7 @@ export function DFSSearchAllRoutes() {
 				wordGraph: engine!.wordGraph,
 				startChar: sortedNextRoutesInfo_[0].char,
 				exceptWords: undefined,
+				customConditionEngine: customConditionEngine,
 			},
 		});
 
