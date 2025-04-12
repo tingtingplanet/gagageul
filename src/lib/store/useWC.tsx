@@ -223,19 +223,7 @@ export const useWC = create<WCInfo>((set, get) => ({
 		});
 	},
 
-	customConditions: [
-		{
-			exceptWords: {
-				축식: 4,
-			},
-			includeWords: { 축식: 4 },
-			startChar: "축",
-			endChar: "식",
-			conditionType: "contains",
-			type: "priority",
-			priority: -1,
-		},
-	],
+	customConditions: [],
 	setCustomConditions: (customConditions: CustomCondition[]) =>
 		set(() => ({ customConditions })),
 	searchResult: undefined,
