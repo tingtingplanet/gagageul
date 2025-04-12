@@ -7,6 +7,7 @@ import { CustomCondition } from "@/lib/wc/WordChain";
 interface ConditionItem extends CustomCondition {
 	id: string;
 	errors: string[];
+	priorityInput: string;
 }
 
 // WordCount pair interface
@@ -25,6 +26,7 @@ const createDefaultCondition = (): Omit<ConditionItem, "id" | "errors"> => ({
 	conditionType: "endswith",
 	type: "win",
 	priority: 0,
+	priorityInput: "0",
 });
 
 // Validate condition
@@ -53,6 +55,20 @@ function validateCondition(
 	if (!Object.keys(condition.includeWords).every((word) => word.length === 2)) {
 		errors.push("포함할 단어는 각각 두글자 이어야합니다");
 	}
+	console.log("input");
+	console.log(condition.priorityInput);
+	console.log(isNaN(Number(condition.priorityInput)));
+	if (condition.type === "priority" && condition.priorityInput !== undefined) {
+		if (condition.priorityInput === "-" || condition.priorityInput === "") {
+			errors.push("우선순위는 숫자만 입력 가능합니다");
+		} else if (isNaN(Number(condition.priorityInput))) {
+			errors.push("우선순위는 숫자만 입력 가능합니다");
+		} else {
+			condition.priority = Number(condition.priorityInput);
+		}
+	}
+	console.log(errors);
+	console.log("errors");
 	return errors;
 }
 
@@ -84,10 +100,14 @@ function WordCountPairInput({
 
 	return (
 		<div>
-			<label className=" text-sm font-medium text-gray-700 mb-1">{label}</label>
+			<label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+				{label}
+			</label>
 
 			{pairs.length === 0 && (
-				<div className="text-sm text-gray-500 mb-2">아직 항목이 없습니다.</div>
+				<div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+					아직 항목이 없습니다.
+				</div>
 			)}
 
 			{pairs.map((pair) => (
@@ -97,22 +117,22 @@ function WordCountPairInput({
 						value={pair.word}
 						maxLength={2}
 						onChange={(e) => updatePair(pair.id, { word: e.target.value })}
-						className="flex-1 border rounded px-3 py-2"
+						className="flex-1 border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 						placeholder={placeholder}
 					/>
-					<span className="text-gray-500">:</span>
+					<span className="text-gray-500 dark:text-gray-400">:</span>
 					<input
 						type="number"
 						value={pair.count}
 						onChange={(e) => {
-							const value = parseInt(e.target.value);
+							const value = Number(e.target.value);
 							updatePair(pair.id, { count: isNaN(value) ? 1 : value });
 						}}
-						className="w-20 border rounded px-3 py-2"
+						className="w-20 border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 					/>
 					<button
 						onClick={() => removePair(pair.id)}
-						className="text-gray-500 hover:text-red-600"
+						className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500"
 						aria-label="Remove pair"
 					>
 						<AiOutlineClose />
@@ -122,7 +142,7 @@ function WordCountPairInput({
 
 			<button
 				onClick={addPair}
-				className="flex items-center text-blue-500 hover:text-blue-700 text-sm"
+				className="flex items-center text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
 			>
 				<AiOutlinePlus className="mr-1" /> 새 항목 추가
 			</button>
@@ -152,6 +172,7 @@ export default function CustomConditionPage() {
 				id: crypto.randomUUID(),
 				...condition,
 				errors: [],
+				priorityInput: condition.priority.toString(),
 			}));
 
 			setConditions(initialConditions);
@@ -239,6 +260,7 @@ export default function CustomConditionPage() {
 		const newCondition: ConditionItem = {
 			id,
 			...defaultCondition,
+			priorityInput: "0",
 			errors: validateCondition(defaultCondition),
 		};
 
@@ -273,25 +295,37 @@ export default function CustomConditionPage() {
 			prev.map((condition) => {
 				if (condition.id !== id) return condition;
 
-				const updated = {
-					...condition,
-					...updates,
-				} as ConditionItem;
+				let updatedCondition = { ...condition, ...updates };
 
-				const { id: _, errors: __, ...conditionWithoutIdErrors } = updated;
+				if (updates.priorityInput !== undefined) {
+					const numValue =
+						updates.priorityInput === "-"
+							? 0
+							: updates.priorityInput === ""
+							? 0
+							: Number(updates.priorityInput);
+					updatedCondition.priority = isNaN(numValue) ? 0 : numValue;
+				}
+
+				const {
+					id: _,
+					errors: __,
+
+					...conditionWithoutIdErrors
+				} = updatedCondition;
 				const errors = validateCondition(conditionWithoutIdErrors);
 
-				return { ...updated, errors };
+				return { ...updatedCondition, errors };
 			})
 		);
 	};
 
 	return (
-		<div className="p-6 space-y-6 max-w-3xl mx-auto">
-			<h1 className="text-xl font-bold">커스텀 조건 설정</h1>
+		<div className="p-6 space-y-6 max-w-3xl mx-auto dark:text-gray-200">
+			<h1 className="text-xl font-bold dark:text-white">커스텀 조건 설정</h1>
 
 			{conditions.length === 0 && (
-				<div className="text-center text-gray-500 py-4">
+				<div className="text-center text-gray-500 dark:text-gray-400 py-4">
 					<p>아직 조건이 없습니다. 새 조건을 추가해 보세요.</p>
 				</div>
 			)}
@@ -299,12 +333,12 @@ export default function CustomConditionPage() {
 			{conditions.map((condition) => (
 				<div
 					key={condition.id}
-					className="relative bg-white border rounded-lg shadow-sm p-4 space-y-4"
+					className="relative bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm p-4 space-y-4"
 				>
 					<div className="flex justify-end">
 						<button
 							onClick={() => removeCondition(condition.id)}
-							className="text-gray-500 hover:text-red-600"
+							className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-500"
 							aria-label="Remove condition"
 						>
 							<AiOutlineClose />
@@ -313,7 +347,7 @@ export default function CustomConditionPage() {
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 								조건 타입
 							</label>
 							<select
@@ -326,7 +360,7 @@ export default function CustomConditionPage() {
 											| "contains",
 									})
 								}
-								className="w-full border rounded px-3 py-2"
+								className="w-full border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 							>
 								<option value="endswith">끝나는 문자로</option>
 								<option value="startswith">시작하는 문자로</option>
@@ -335,7 +369,7 @@ export default function CustomConditionPage() {
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 								승패 타입
 							</label>
 							<select
@@ -345,7 +379,7 @@ export default function CustomConditionPage() {
 										type: e.target.value as "win" | "los" | "priority",
 									})
 								}
-								className="w-full border rounded px-3 py-2"
+								className="w-full border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 							>
 								<option value="win">승리</option>
 								<option value="los">패배</option>
@@ -358,7 +392,7 @@ export default function CustomConditionPage() {
 						{(condition.conditionType === "startswith" ||
 							condition.conditionType === "contains") && (
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 									시작 문자
 								</label>
 								<input
@@ -368,7 +402,7 @@ export default function CustomConditionPage() {
 									onChange={(e) =>
 										updateCondition(condition.id, { startChar: e.target.value })
 									}
-									className="w-full border rounded px-3 py-2"
+									className="w-full border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 									placeholder="시작 문자 (한 글자)"
 								/>
 							</div>
@@ -377,7 +411,7 @@ export default function CustomConditionPage() {
 						{(condition.conditionType === "endswith" ||
 							condition.conditionType === "contains") && (
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 									끝 문자
 								</label>
 								<input
@@ -387,7 +421,7 @@ export default function CustomConditionPage() {
 									onChange={(e) =>
 										updateCondition(condition.id, { endChar: e.target.value })
 									}
-									className="w-full border rounded px-3 py-2"
+									className="w-full border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 									placeholder="끝 문자 (한 글자)"
 								/>
 							</div>
@@ -396,18 +430,22 @@ export default function CustomConditionPage() {
 
 					{condition.type === "priority" && (
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 								우선순위
 							</label>
 							<input
-								type="number"
-								value={condition.priority}
+								type="text"
+								value={
+									condition.priorityInput !== undefined
+										? condition.priorityInput
+										: condition.priority.toString()
+								}
 								onChange={(e) =>
 									updateCondition(condition.id, {
-										priority: parseInt(e.target.value),
+										priorityInput: e.target.value,
 									})
 								}
-								className="w-full border rounded px-3 py-2"
+								className="w-full border dark:border-gray-600 rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
 							/>
 						</div>
 					)}
@@ -433,9 +471,12 @@ export default function CustomConditionPage() {
 					</div>
 
 					{condition.errors.length > 0 && (
-						<div className="bg-red-50 border border-red-200 rounded p-2">
+						<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2">
 							{condition.errors.map((error, index) => (
-								<p key={index} className="text-sm text-red-600">
+								<p
+									key={index}
+									className="text-sm text-red-600 dark:text-red-400"
+								>
 									⚠️ {error}
 								</p>
 							))}
@@ -446,7 +487,7 @@ export default function CustomConditionPage() {
 
 			<button
 				onClick={addCondition}
-				className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
+				className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
 			>
 				➕ 새 조건 추가
 			</button>

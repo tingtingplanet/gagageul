@@ -150,15 +150,18 @@ export default function CustomPriority() {
 	};
 
 	return (
-		<div className="p-6 space-y-4 max-w-2xl mx-auto">
-			<h1 className="text-xl font-bold">탐색 우선순위 입력</h1>
+		<div className="p-6 space-y-4 max-w-2xl mx-auto dark:text-gray-200">
+			<h1 className="text-xl font-bold dark:text-white">탐색 우선순위 입력</h1>
 
 			{cards.map((card) => (
-				<div key={card.id} className="relative bg-white border rounded shadow">
+				<div
+					key={card.id}
+					className="relative bg-white dark:bg-gray-800 border dark:border-gray-700 rounded shadow"
+				>
 					<div className="flex justify-end pr-1 py-1">
 						<button
 							onClick={() => removeCard(card.id)}
-							className=" text-black-500 hover:text-red-700 text-xs bg-gray-200 rounded-full w-4 h-4 text-center items-center justify-center justify-items-center"
+							className="text-black-500 dark:text-gray-400 hover:text-red-700 dark:hover:text-red-500 text-xs bg-gray-200 dark:bg-gray-700 rounded-full w-4 h-4 text-center items-center justify-center justify-items-center"
 						>
 							<AiOutlineClose />
 						</button>
@@ -175,7 +178,7 @@ export default function CustomPriority() {
 									result: parseInput(e.target.value, card.input),
 								})
 							}
-							className="w-1/3 px-3 py-2 border rounded"
+							className="w-1/3 px-3 py-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 						/>
 						<input
 							type="text"
@@ -187,20 +190,20 @@ export default function CustomPriority() {
 									result: parseInput(card.prefix, e.target.value),
 								})
 							}
-							className="flex-1 px-3 py-2 border rounded"
+							className="flex-1 px-3 py-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 						/>
 					</div>
 
-					<div className="mt-2 text-sm text-gray-600">
+					<div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
 						{typeof card.result === "string" ? (
-							<div className="flex justify-between bg-gray-50 px-3 py-1 rounded mb-1 text-red-500">
+							<div className="flex justify-between bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded mb-1 text-red-500">
 								<span>{card.result}</span>
 							</div>
 						) : (
 							Object.entries(card.result).map(([key, val]) => (
 								<div
 									key={key}
-									className="flex justify-between bg-gray-50 px-3 py-1 rounded mb-1"
+									className="flex justify-between bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded mb-1"
 								>
 									<span>{key}</span>
 									<span>{val}</span>
@@ -213,7 +216,7 @@ export default function CustomPriority() {
 
 			<button
 				onClick={addCard}
-				className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+				className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded dark:bg-blue-600 dark:hover:bg-blue-700"
 			>
 				➕ 카드 추가
 			</button>
