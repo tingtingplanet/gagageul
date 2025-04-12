@@ -182,12 +182,15 @@ export function DFSSearch() {
 			  })
 			: nextRoutesInfo_;
 		const conditionStates = customConditionEngine.getValidConditions();
+		console.log(conditionStates);
+
 		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
 			conditionStates,
 			sortedNextRoutesInfo.map((e) => e.word)
 		).map((e) => ({
 			word: e,
 		}));
+		console.log(sortedNextRoutesInfo_);
 		const startChar = sortedNextRoutesInfo_[0];
 		setNextRoutesInfo(sortedNextRoutesInfo_);
 
@@ -499,6 +502,7 @@ export function DFSSearchAllRoutes() {
 		const customConditionEngine = new CustomConditionEngine(customConditions);
 		customConditionEngine.initialize(engine!.words);
 		const conditionStates = customConditionEngine.getValidConditions();
+		console.log(conditionStates);
 		const sortedNextRoutesInfo_ = sortByConditionOnStrings(
 			conditionStates,
 			nextRoutesInfo_.map((e) => e.char)

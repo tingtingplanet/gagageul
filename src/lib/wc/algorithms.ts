@@ -173,8 +173,8 @@ export function sortByConditionOnStrings(
 		}
 	});
 	const sortedWords = nextWords.sort((a, b) => {
-		const a_condition = containsMap[a[0] + a[1]] ?? 0;
-		const b_condition = containsMap[b[0] + b[1]] ?? 0;
+		const a_condition = containsMap[a[0] + a.at(-1)] ?? 0;
+		const b_condition = containsMap[b[0] + b.at(-1)] ?? 0;
 		return a_condition - b_condition;
 	});
 	console.log("after sorting");
@@ -633,9 +633,18 @@ export function isWin(
 
 	const nextWords = getNextWords(chanGraph, wordGraph, currChar, true);
 	//추가 소팅 2회
-	if (nextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
-		console.log("before sorting");
-		console.log(nextWords.map((e) => e.word));
+	if (nextWords.find((e) => e.word[0] === "축" && e.word[1] === "식")) {
+		console.log("before sorting iswin");
+		console.log(
+			conditions.map((e) => e.exceptWords),
+			conditions.map((e) => e.includeWords),
+			conditions.map((e) => e.startChar),
+			conditions.map((e) => e.endChar),
+			conditions.map((e) => e.conditionType),
+			conditions.map((e) => e.type),
+			conditions.map((e) => e.priority)
+		);
+		console.log(nextWords.map((e) => e.word.join("")));
 	}
 	nextWords.sort((a, b) => nextWordSortKey(a, b, namedRule));
 	if (customPriority) {
@@ -648,16 +657,21 @@ export function isWin(
 			);
 		});
 	}
-	if (nextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
-		console.log("after sorting");
-		console.log(nextWords.map((e) => e.word));
-	}
 	const sortedNextWords = sortByCondition(conditions, nextWords);
 
-	// if (sortedNextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
-	// 	console.log("final sorting");
-	// 	console.log(sortedNextWords.map((e) => e.word));
-	// }
+	if (nextWords.find((e) => e.word[0] === "축" && e.word[1] === "식")) {
+		console.log("after sorting iswin");
+		console.log(
+			conditions.map((e) => e.exceptWords),
+			conditions.map((e) => e.includeWords),
+			conditions.map((e) => e.startChar),
+			conditions.map((e) => e.endChar),
+			conditions.map((e) => e.conditionType),
+			conditions.map((e) => e.type),
+			conditions.map((e) => e.priority)
+		);
+		console.log(nextWords.map((e) => e.word.join("")));
+	}
 	for (let { word, isLoop } of sortedNextWords) {
 		const nextCustomConditionEngine = customConditionEngine?.copy();
 		const nextChanGraph = chanGraph.copy();
