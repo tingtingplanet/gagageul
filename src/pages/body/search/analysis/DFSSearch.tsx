@@ -96,7 +96,12 @@ export function DFSSearch() {
 
 						return result;
 					});
-					const startChar = nextRoutesInfo[endedWordIdx + 1];
+					const customConditionEngine = new CustomConditionEngine(
+						customConditions
+					);
+					customConditionEngine.initialize(engine!.words);
+					const conditionStates = customConditionEngine.getValidConditions();
+
 					if (endedWordIdx !== nextRoutesInfo.length - 1 && win) {
 						worker.current.postMessage({
 							action: "startAnalysis",
@@ -116,7 +121,9 @@ export function DFSSearch() {
 										engine!.rule.tailIdx
 									),
 								],
+
 								customPriority: customPriority,
+								customConditionEngine: customConditionEngine,
 							},
 						});
 					}
@@ -450,6 +457,11 @@ export function DFSSearchAllRoutes() {
 
 						return result;
 					});
+					const customConditionEngine = new CustomConditionEngine(
+						customConditions
+					);
+					customConditionEngine.initialize(engine!.words);
+					const conditionStates = customConditionEngine.getValidConditions();
 
 					if (endedWordIdx !== nextRoutesInfo.length - 1) {
 						worker.current.postMessage({
@@ -461,6 +473,7 @@ export function DFSSearchAllRoutes() {
 								wordGraph: engine!.wordGraph,
 								startChar: nextRoutesInfo[endedWordIdx + 1].char,
 								exceptWord: undefined,
+								customConditionEngine: customConditionEngine,
 							},
 						});
 					}

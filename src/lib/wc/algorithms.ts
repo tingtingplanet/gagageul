@@ -150,10 +150,14 @@ export function sortByConditionOnStrings(
 	conditionStates: CustomConditionState[],
 	nextWords: string[]
 ) {
+	console.log("before sorting");
+	console.log(nextWords);
 	const priorityStates = conditionStates.filter(
 		(e) => e.isValid && e.type === "priority"
 	);
 	if (priorityStates.length === 0) {
+		console.log("after sorting");
+		console.log(nextWords);
 		return nextWords;
 	}
 	const containsMap: Record<string, number> = {};
@@ -173,6 +177,8 @@ export function sortByConditionOnStrings(
 		const b_condition = containsMap[b[0] + b[1]] ?? 0;
 		return a_condition - b_condition;
 	});
+	console.log("after sorting");
+	console.log(sortedWords);
 	return sortedWords;
 }
 export function getSingleChars(chanGraph: MultiDiGraph) {
@@ -601,12 +607,14 @@ export function isWin(
 		conditions.filter((e) => e.type === "win" && e.isSelected && e.isValid)
 			.length > 0
 	) {
+		console.log("win");
 		return false;
 	} else if (
 		conditions &&
 		conditions.filter((e) => e.type === "los" && e.isSelected && e.isValid)
 			.length > 0
 	) {
+		console.log("los");
 		return true;
 	}
 
@@ -625,6 +633,10 @@ export function isWin(
 
 	const nextWords = getNextWords(chanGraph, wordGraph, currChar, true);
 	//추가 소팅 2회
+	if (nextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
+		console.log("before sorting");
+		console.log(nextWords.map((e) => e.word));
+	}
 	nextWords.sort((a, b) => nextWordSortKey(a, b, namedRule));
 	if (customPriority) {
 		nextWords.sort((a, b) => {
@@ -636,17 +648,21 @@ export function isWin(
 			);
 		});
 	}
+	if (nextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
+		console.log("after sorting");
+		console.log(nextWords.map((e) => e.word));
+	}
 	const sortedNextWords = sortByCondition(conditions, nextWords);
 
+	// if (sortedNextWords.find((e) => e.word[0] === "준" && e.word[1] === "택")) {
+	// 	console.log("final sorting");
+	// 	console.log(sortedNextWords.map((e) => e.word));
+	// }
 	for (let { word, isLoop } of sortedNextWords) {
 		const nextCustomConditionEngine = customConditionEngine?.copy();
 		const nextChanGraph = chanGraph.copy();
 		const nextWordGraph = wordGraph.copy();
-		nextWordGraph.clearNodeInfo();
-		nextChanGraph.clearNodeInfo();
-		pruningWinLos(nextChanGraph, nextWordGraph);
-		pruningWinLosCir(nextChanGraph, nextWordGraph);
-		nextCustomConditionEngine.updateState(word[0] + word[1]);
+
 		if (pushCallback) {
 			pushCallback(word[0], word[1]);
 		}
@@ -654,14 +670,19 @@ export function isWin(
 			nextWordGraph.nodes[word[0]].loop = undefined;
 		} else {
 			nextWordGraph.removeEdge(word[0], word[1], 1);
-			//todo: condition update
 		}
+		nextWordGraph.clearNodeInfo();
+		nextChanGraph.clearNodeInfo();
+		pruningWinLos(nextChanGraph, nextWordGraph);
+		pruningWinLosCir(nextChanGraph, nextWordGraph);
+		nextCustomConditionEngine.updateState(word[0] + word[1]);
 		const win = isWin(
 			namedRule,
 			nextChanGraph,
 			nextWordGraph,
 			word[1],
 			nextCustomConditionEngine,
+			// customConditionEngine,
 			pushCallback,
 			popCallback,
 			customPriority

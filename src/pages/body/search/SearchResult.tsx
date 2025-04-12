@@ -1000,10 +1000,14 @@ const tabInfo: Record<string, { name: string; component: ReactNode }[]> = {
 		{ name: "끝 글자", component: <SearchResultEndsWith /> },
 		{ name: "트리 탐색", component: <SolutionTree /> },
 		{ name: "두음 법칙", component: <SearchResultChangeables /> },
+		{ name: "글자 계산 순서", component: <CustomPriority /> },
+		{ name: "단어 계산 순서", component: <CustomCondition /> },
 	],
 	notChar: [
 		{ name: "첫 글자", component: <SearchResultStartsWith /> },
 		{ name: "끝 글자", component: <SearchResultEndsWith /> },
+		{ name: "글자 계산 순서", component: <CustomPriority /> },
+		{ name: "단어 계산 순서", component: <CustomCondition /> },
 	],
 };
 function WordsResult() {
