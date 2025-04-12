@@ -173,8 +173,16 @@ export function sortByConditionOnStrings(
 		}
 	});
 	const sortedWords = nextWords.sort((a, b) => {
-		const a_condition = containsMap[a[0] + a.at(-1)] ?? 0;
-		const b_condition = containsMap[b[0] + b.at(-1)] ?? 0;
+		const a_condition =
+			containsMap[a[0] + a.at(-1)] ??
+			endswithMap[a.at(-1)!] ??
+			startswithMap[a[0]] ??
+			0;
+		const b_condition =
+			containsMap[b[0] + b.at(-1)] ??
+			endswithMap[b.at(-1)!] ??
+			startswithMap[b[0]] ??
+			0;
 		return a_condition - b_condition;
 	});
 	console.log("after sorting");
